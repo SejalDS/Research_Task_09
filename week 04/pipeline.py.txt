@@ -1,0 +1,74 @@
+from pathlib import Path
+import pandas as pd
+
+from .config import get_paths
+from .transform import standardize_text_columns, add_parsed_date_columns, build_data_dictionary
+from .analyze import (
+    missingness_summary, text_inconsistencies, temporal_coverage,
+    numeric_summary, full_summary, ground_truth_findings, save_json
+)
+from .present import (
+    plot_top_missing, plot_row_completeness,
+    pick_categorical_candidates, plot_top_category_values
+)
+from .llm import build_hypothesis_prompt, log_prompt
+
+
+def run_pipeline(project_root):
+    paths = get_paths(project_root)
+
+    raw_file = paths.data_raw / "Unfit_Properties.csv"
+    if not raw_file.exists():
+        raise FileNotFoundError("Expected raw file at: {}".format(raw_file))
+
+    # Load raw
+    df_raw = pd.read_csv(raw_file)
+
+    # Transform
+    df_clean = standardize_text_columns(df_raw)
+    df_clean = add_parsed_date_columns(df_clean)
+
+    clean_file = paths.data_processed / "Unfit_Properties_clean.csv"
+    df_clean.to_csv(clean_file, index=False)
+
+    # Data dictionary (based on raw)
+    dd = build_data_dictionary(df_raw)
+    dd_path = paths.docs / "data_dictionary.csv"
+    dd.to_csv(dd_path, index=False)
+
+    # Analysis artifacts
+    miss = missingness_summary(df_clean)
+    inc = text_inconsistencies(df_clean)
+    temp = temporal_coverage(df_clean)
+    num = numeric_summary(df_clean)
+    full = full_summary(df_clean)
+    gt = ground_truth_findings(df_clean)
+
+    miss.to_csv(paths.outputs / "missing_values_summary.csv")
+    inc.to_csv(paths.outputs / "text_inconsistencies.csv", index=False)
+    temp.to_csv(paths.outputs / "temporal_coverage.csv", index=False)
+    num.to_csv(paths.outputs / "numeric_summary.csv")
+    full.to_csv(paths.outputs / "full_summary.csv")
+    save_json(gt, paths.outputs / "ground_truth_findings.json")
+
+    # Figures (prototype)
+    plot_top_missing(miss, paths.figures / "missing_top10.png", top_n=10)
+    plot_row_completeness(df_clean, paths.figures / "row_completeness.png", bins=20)
+
+    cat_candidates = pick_categorical_candidates(df_clean)
+    if cat_candidates:
+        plot_top_category_values(df_clean, cat_candidates[0], paths.figures / "category_top10.png", top_n=10)
+
+    # LLM prompt log
+    prompt = build_hypothesis_prompt(gt)
+    prompt_log_file = log_prompt(paths.logs, prompt, tag="hypotheses")
+
+    # ✅ MUST return this dict
+    return {
+        "raw_file": str(raw_file),
+        "clean_file": str(clean_file),
+        "data_dictionary": str(dd_path),
+        "outputs_dir": str(paths.outputs),
+        "figures_dir": str(paths.figures),
+        "prompt_log_file": str(prompt_log_file),
+    }

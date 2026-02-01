@@ -1,0 +1,54 @@
+from pathlib import Path
+import matplotlib.pyplot as plt
+import pandas as pd
+
+
+def plot_top_missing(missing_df, outpath, top_n=10):
+    outpath = Path(outpath)
+    top = missing_df.head(top_n)
+
+    plt.figure()
+    plt.bar(top.index.astype(str), top["missing_pct"])
+    plt.xticks(rotation=75, ha="right")
+    plt.ylabel("Missing %")
+    plt.title(f"Top {top_n} Columns by Missing Percentage")
+    plt.tight_layout()
+    plt.savefig(outpath, dpi=200)
+    plt.close()
+
+
+def plot_row_completeness(df, outpath, bins=20):
+    outpath = Path(outpath)
+    row_comp = df.notna().mean(axis=1) * 100
+
+    plt.figure()
+    plt.hist(row_comp, bins=bins)
+    plt.xlabel("Percent Non-Null per Row")
+    plt.ylabel("Record Count")
+    plt.title("Row Completeness Distribution")
+    plt.tight_layout()
+    plt.savefig(outpath, dpi=200)
+    plt.close()
+
+
+def pick_categorical_candidates(df, min_unique=2, max_unique=25):
+    text_cols = df.select_dtypes(include=["object", "string"]).columns.tolist()
+    candidates = []
+    for c in text_cols:
+        n = df[c].nunique(dropna=True)
+        if min_unique <= n <= max_unique:
+            candidates.append(c)
+    return candidates
+
+
+def plot_top_category_values(df, col, outpath, top_n=10):
+    outpath = Path(outpath)
+    vc = df[col].value_counts(dropna=False).head(top_n)
+
+    plt.figure()
+    plt.bar(vc.index.astype(str), vc.values)
+    plt.xticks(rotation=75, ha="right")
+    plt.title(f"Top {top_n} values for {col}")
+    plt.tight_layout()
+    plt.savefig(outpath, dpi=200)
+    plt.close()

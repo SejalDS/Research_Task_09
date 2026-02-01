@@ -1,0 +1,42 @@
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Union
+
+@dataclass(frozen=True)
+class ProjectPaths:
+    root: Path
+    data_raw: Path
+    data_processed: Path
+    docs: Path
+    outputs: Path
+    figures: Path
+    reports: Path
+    logs: Path
+    prompts: Path
+
+def get_paths(project_root: Union[str, Path]) -> ProjectPaths:
+    root = Path(project_root).resolve()
+
+    data_raw = root / "data_raw"
+    data_processed = root / "data_processed"
+    docs = root / "docs"
+    outputs = root / "outputs"
+    figures = outputs / "figures"
+    reports = outputs / "reports"
+    logs = root / "logs"
+    prompts = root / "prompts"
+
+    for p in [data_raw, data_processed, docs, outputs, figures, reports, logs, prompts]:
+        p.mkdir(parents=True, exist_ok=True)
+
+    return ProjectPaths(
+        root=root,
+        data_raw=data_raw,
+        data_processed=data_processed,
+        docs=docs,
+        outputs=outputs,
+        figures=figures,
+        reports=reports,
+        logs=logs,
+        prompts=prompts,
+    )

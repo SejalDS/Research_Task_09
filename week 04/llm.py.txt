@@ -1,0 +1,49 @@
+from __future__ import annotations
+import json
+from datetime import datetime
+from pathlib import Path
+
+def build_hypothesis_prompt(ground_truth: dict) -> str:
+    return f"""
+You are analyzing Syracuse “Unfit Properties” open data.
+
+Use ONLY the following ground-truth statistics (do not invent numbers):
+- total_records: {ground_truth.get("total_records")}
+- most_missing_column: {ground_truth.get("most_missing_column")} with {ground_truth.get("most_missing_pct")} % missing
+
+Tasks:
+1) Propose 3 hypotheses about spatial or temporal patterns in unfit properties.
+2) For each hypothesis, describe what calculation or visualization would confirm/deny it.
+3) Identify 2 potential biases in this dataset and how to mitigate them in reporting.
+
+Rules:
+- Do NOT invent numbers
+- Clearly label hypotheses vs confirmed findings
+- If uncertain, state uncertainty explicitly
+""".strip()
+
+def log_prompt(logs_dir: str | Path, prompt_text: str, tag: str = "hypotheses") -> Path:
+    logs_dir = Path(logs_dir)
+    logs_dir.mkdir(parents=True, exist_ok=True)
+
+    payload = {
+        "tag": tag,
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "prompt": prompt_text,
+        "response": None,
+        "notes": "",
+        "prompt_version": 1
+    }
+
+    out = logs_dir / f"llm_{tag}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return out
+
+def attach_response(log_file: str | Path, response_text: str, notes: str = "", prompt_version: int | None = None) -> None:
+    log_file = Path(log_file)
+    obj = json.loads(log_file.read_text(encoding="utf-8"))
+    obj["response"] = response_text
+    obj["notes"] = notes
+    if prompt_version is not None:
+        obj["prompt_version"] = int(prompt_version)
+    log_file.write_text(json.dumps(obj, indent=2), encoding="utf-8")

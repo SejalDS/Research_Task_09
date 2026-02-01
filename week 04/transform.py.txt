@@ -1,0 +1,52 @@
+from __future__ import annotations
+import pandas as pd
+
+DATE_KEYWORDS = ("date", "time", "created", "updated", "year")
+
+def standardize_text_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Trim whitespace on string/object columns.
+    Does NOT change casing (to avoid altering meaning).
+    """
+    out = df.copy()
+    text_cols = out.select_dtypes(include=["object", "string"]).columns.tolist()
+    for c in text_cols:
+        out[c] = out[c].astype("string").str.strip()
+    return out
+
+def add_parsed_date_columns(df: pd.DataFrame, keywords=DATE_KEYWORDS) -> pd.DataFrame:
+    """
+    If a column name looks date-like, attempt parsing and add a new column with suffix _dt.
+    Leaves original untouched.
+    """
+    out = df.copy()
+    for c in out.columns:
+        cl = c.lower()
+        if any(k in cl for k in keywords):
+            parsed = pd.to_datetime(out[c], errors="coerce")
+            if parsed.notna().sum() > 0:
+                out[f"{c}_dt"] = parsed
+    return out
+
+def build_data_dictionary(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Data dictionary template using real df properties.
+    """
+    def sample_values(s: pd.Series, n=5):
+        s = s.dropna()
+        if s.empty:
+            return []
+        return s.astype(str).unique()[:n].tolist()
+
+    dd = pd.DataFrame({
+        "column": df.columns,
+        "dtype": [str(df[c].dtype) for c in df.columns],
+        "missing_count": [int(df[c].isna().sum()) for c in df.columns],
+        "missing_pct": [round(float(df[c].isna().mean() * 100), 2) for c in df.columns],
+        "example_values": [sample_values(df[c]) for c in df.columns],
+        "description": ["TODO - define meaning"] * len(df.columns),
+        "expected_values_or_format": ["TODO"] * len(df.columns),
+        "notes": [""] * len(df.columns)
+    }).sort_values("missing_pct", ascending=False)
+
+    return dd

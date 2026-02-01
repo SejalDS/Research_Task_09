@@ -1,0 +1,38 @@
+import json
+import shutil
+from datetime import datetime
+from pathlib import Path
+from typing import Optional
+
+from .config import ProjectPaths
+
+def acquire_local_csv(
+    paths: ProjectPaths,
+    source_csv: str | Path,
+    raw_filename: str = "Unfit_Properties_raw.csv",
+    dataset_name: str = "Unfit Properties (Syracuse Open Data)",
+    endpoint_or_url: Optional[str] = None
+) -> Path:
+    """
+    Copies a local CSV into data_raw and writes acquisition metadata.
+    Raw is treated as immutable.
+    """
+    source = Path(source_csv).resolve()
+    if not source.exists():
+        raise FileNotFoundError(f"Source file not found: {source}")
+
+    raw_path = paths.data_raw / raw_filename
+    shutil.copy2(source, raw_path)
+
+    metadata = {
+        "dataset_name": dataset_name,
+        "acquisition_date_local": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "source_file_original": str(source),
+        "stored_raw_file": str(raw_path),
+        "api_or_download_endpoint": endpoint_or_url or "LOCAL_COPY (endpoint TBD)",
+        "notes": "Raw file copied exactly as received. Processing uses separate outputs.",
+    }
+
+    meta_path = paths.docs / "acquisition_metadata.json"
+    meta_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+    return raw_path

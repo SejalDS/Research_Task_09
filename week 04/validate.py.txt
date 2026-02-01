@@ -1,0 +1,54 @@
+import json
+import re
+from pathlib import Path
+
+
+def extract_numbers(text):
+    """
+    Extracts all numeric values from a string.
+    """
+    nums = re.findall(r"(?<!\w)(?:\d+\.?\d*|\.\d+)(?!\w)", text or "")
+    out = []
+    for n in nums:
+        try:
+            out.append(float(n))
+        except ValueError:
+            pass
+    return out
+
+
+def validate_llm_response_against_ground_truth(response_text, ground_truth):
+    """
+    Conservative validation:
+    Any numeric values produced by the LLM must match known ground-truth values.
+    """
+    gt_nums = set()
+
+    if ground_truth.get("total_records") is not None:
+        gt_nums.add(float(ground_truth["total_records"]))
+
+    if ground_truth.get("most_missing_pct") is not None:
+        gt_nums.add(float(ground_truth["most_missing_pct"]))
+
+    found = extract_numbers(response_text)
+    unknown = [n for n in found if n not in gt_nums]
+
+    return {
+        "numbers_found": found,
+        "ground_truth_numbers": sorted(gt_nums),
+        "unknown_numbers_flagged": unknown,
+        "passes_no_invented_numbers_check": len(unknown) == 0,
+        "note": (
+            "Strict check: LLM should not invent numeric values. "
+            "If more metrics are allowed, add them to ground_truth."
+        )
+    }
+
+
+def save_validation_report(report, outpath):
+    """
+    Saves validation report as JSON.
+    """
+    outpath = Path(outpath)
+    outpath.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    return outpath
