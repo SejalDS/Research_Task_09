@@ -1,0 +1,8 @@
+{
+  "tag": "hypotheses",
+  "timestamp": "2026-01-31T18:34:36",
+  "prompt": "You are analyzing Syracuse \u201cUnfit Properties\u201d open data.\n\nUse ONLY the following ground-truth statistics (do not invent numbers):\n- total_records: 264\n- most_missing_column: Vacant with 100.0 % missing\n\nTasks:\n1) Propose 3 hypotheses about spatial or temporal patterns in unfit properties.\n2) For each hypothesis, describe what calculation or visualization would confirm/deny it.\n3) Identify 2 potential biases in this dataset and how to mitigate them in reporting.\n\nRules:\n- Do NOT invent numbers\n- Clearly label hypotheses vs confirmed findings\n- If uncertain, state uncertainty explicitly",
+  "response": null,
+  "notes": "",
+  "prompt_version": 1
+}
