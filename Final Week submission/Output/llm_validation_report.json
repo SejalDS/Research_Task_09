@@ -1,0 +1,10 @@
+{
+  "numbers_found": [],
+  "ground_truth_numbers": [
+    100.0,
+    264.0
+  ],
+  "unknown_numbers_flagged": [],
+  "passes_no_invented_numbers_check": true,
+  "note": "Strict check: LLM should not invent numeric values. If more metrics are allowed, add them to ground_truth."
+}
