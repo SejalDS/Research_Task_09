@@ -1,0 +1,8 @@
+from src.validate import validate_llm_response_against_ground_truth
+
+def test_validate_llm_flags_unknown_numbers():
+    gt = {"total_records": 100, "most_missing_pct": 25.0}
+    resp = "There are 100 records. Missingness is 25.0%. Another number 999 is here."
+    report = validate_llm_response_against_ground_truth(resp, gt)
+    assert report["passes_no_invented_numbers_check"] is False
+    assert 999.0 in report["unknown_numbers_flagged"]

@@ -1,0 +1,7 @@
+import pandas as pd
+from src.transform import standardize_text_columns
+
+def test_standardize_text_trims_whitespace():
+    df = pd.DataFrame({"a": [" x ", "y", None]})
+    out = standardize_text_columns(df)
+    assert out["a"].iloc[0] == "x"

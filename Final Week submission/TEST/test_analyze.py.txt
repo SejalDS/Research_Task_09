@@ -1,0 +1,8 @@
+import pandas as pd
+from src.analyze import missingness_summary
+
+def test_missingness_summary_counts():
+    df = pd.DataFrame({"a": [1, None, 3], "b": [None, None, 2]})
+    ms = missingness_summary(df)
+    assert ms.loc["b", "missing_count"] == 2
+    assert ms.loc["a", "missing_count"] == 1

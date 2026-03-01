@@ -1,0 +1,9 @@
+import sys
+from pathlib import Path
+
+# Add syracuse_unfit_properties/ to sys.path so "import src" works
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
+
+# Optional debug: uncomment if needed
+# print("PYTHONPATH ADDED:", PROJECT_ROOT)
